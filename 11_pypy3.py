@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import NewType, List, Tuple, Dict, Set
 import functools
 import re
@@ -19,10 +18,19 @@ serial_number = 1133
 # Subtract 5 from the power level.
 
 
-@dataclass(eq=True, frozen=True)
 class Coord:
-    x: int
-    y: int
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __hash__(self):
+        return self.x*5 + self.y*7
+
+    def __eq__(self, that):
+        return self.x == that.x and self.y == that.y
+
+    def __repr__(self):
+        return f'Coord(x={self.x}, y={self.y})'
 
     def moveByCoord(self, step):
         return Coord(self.x+step.x, self.y+step.y)
@@ -54,7 +62,7 @@ def powerLevel(x, y, serial_number=serial_number):
 
 
 def generate_cell_grid(serial_number):
-    fuelCells: Dict[Coord, int] = dict()
+    fuelCells = dict()
     for x in range(1, 301):
         for y in range(1, 301):
             fuelCells[Coord(x, y)] = powerLevel(
@@ -72,8 +80,8 @@ def sum3x3(c: Coord, fuelCells):
 
 def get_max_coord(fuelCells):
 
-    max3x3Coord: Coord = Coord(-1, -1)
-    max3x3PowerLevel: int = -math.inf
+    max3x3Coord = Coord(-1, -1)
+    max3x3PowerLevel = -math.inf
 
     for x in range(2, 300):
         for y in range(2, 300):
@@ -119,9 +127,9 @@ async def get_max_coord_part_2(fuelCells):
     # loop.run_until_complete(asyncio.wait(tasks))
     # loop.close
     ress = await asyncio.gather(*tasks)
-    maxXxXCoord: Coord = Coord(-1, -1)
-    maxXxXWidth: int = 0
-    maxXxXPowerLevel: int = -math.inf
+    maxXxXCoord = Coord(-1, -1)
+    maxXxXWidth = 0
+    maxXxXPowerLevel = -math.inf
     for res in ress:
         # await t
         (coord, width, powerLevel) = res
@@ -139,12 +147,11 @@ async def main():
     (maxXxXCoord, maxXxXPowerLevel) = await get_max_coord_part_2(cell_grid)
     print(maxXxXCoord, maxXxXPowerLevel)
 
-@dataclass
 class Square:
-    top_left: Coord
-    bottom_right: Coord
-
-    current_sum: int
+    def __init__(self, top_left, bottom_right, current_sum):
+        self.top_left = top_left
+        self.bottom_right = bottom_right
+        self.current_sum = current_sum
 
     def expand(self, cell_grid):
         if(self.bottom_right.x == 300 or self.bottom_right.y == 300):
