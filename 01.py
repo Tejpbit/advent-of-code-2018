@@ -1,5 +1,5 @@
 import functools
-f = open("01.data")
+f = open("data/01.data")
 
 lines = f.readlines()
 lines = list(map(lambda x: x.strip(), lines))

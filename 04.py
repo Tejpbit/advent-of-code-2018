@@ -1,6 +1,6 @@
 import re
 from datetime import datetime, timedelta
-f = open("04.data")
+f = open("data/04.data")
 lines = f.readlines()
 
 

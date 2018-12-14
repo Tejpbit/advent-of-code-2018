@@ -3,7 +3,7 @@ from typing import NewType, List, Tuple, Dict, Set
 import functools
 
 #f = open("06.example.data")
-f = open("06.data")
+f = open("data/06.data")
 lines = f.readlines()
 
 

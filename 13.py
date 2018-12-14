@@ -7,9 +7,9 @@ import asyncio
 
 from util import Coord, north, south, west, east
 
-#f = open("13.example.data")
-f = open("13.data")
-#f = open("13.example-part2.data")
+#f = open("data/13.example.data")
+f = open("data/13.data")
+#f = open("data/13.example-part2.data")
 
 lines = f.readlines()
 

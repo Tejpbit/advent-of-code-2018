@@ -1,4 +1,4 @@
-f = open("03.data")
+f = open("data/03.data")
 lines = f.readlines()
 
 fabricMatrix = [[[] for x in range(1000)] for x in range(1000)]

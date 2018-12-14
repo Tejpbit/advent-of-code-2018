@@ -5,8 +5,8 @@ import functools
 import re
 import math
 
-f = open('10.data')
-#f = open('10.example.data')
+f = open('data/10.data')
+#f = open('data/10.example.data')
 
 
 @dataclass()

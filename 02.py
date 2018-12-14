@@ -1,5 +1,5 @@
 import toolz
-f = open("02.data")
+f = open("data/02.data")
 lines = f.readlines()
 
 

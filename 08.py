@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from typing import List, Set, Dict
 import functools
 
-#f = open("08.example.data")
-f = open("08.data")
+#f = open("data/08.example.data")
+f = open("data/08.data")
 
 line = f.readlines()[0]
 data = line.split(" ")

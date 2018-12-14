@@ -1,7 +1,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from functools import reduce
-f = open("05.data")
+f = open("data/05.data")
 
 lines = f.readlines()
 

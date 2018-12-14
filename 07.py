@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import List, Set, Dict
 import functools
 
-f = open('07.data')
-#f = open('07.example.data')
+f = open('data/07.data')
+#f = open('data/07.example.data')
 lines = f.readlines()
 
 p = re.compile('Step ([A-Z]) must be finished before step ([A-Z]) can begin\.')
