@@ -190,10 +190,10 @@ def lastCartPositionAfterFirstLonesomeTic():
     prettyPrint(tracks, carts)
     count = 0
     while True:
-        # if count > 10000:
-        #     print(count)
-        #     prettyPrint(tracks, carts)
-        #     input("Enter to print next")
+        if count > 773:
+            print(count)
+            prettyPrint(tracks, carts)
+            input("Enter to print next")
         #input("Enter to print next")
         #prettyPrint(tracks, carts)
         if len(carts) == 1:
