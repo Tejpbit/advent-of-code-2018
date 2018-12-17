@@ -36,9 +36,53 @@ class Coord:
             self.move(-1, -1),
             self.move(1, -1)
         }
-    
+
+    def manhattanNeighbours(self):
+        return {
+            self.move(0, 1),
+            self.move(1, 0),
+            self.move(0, -1),
+            self.move(-1, 0),
+        }
+
+    def manhattanDistance(self, to: "Coord"):
+        return abs(self.x-to.x) + abs(self.y-to.y)
+
     def __lt__(self, other):
         return self.y < other.y or (self.y == other.y and self.x < other.x)
+
+    def shortest_path_direction(self, other: "Coord", blocks: Set["Coord"]):
+        distance_grid = dict()
+        new_coords = set()
+        new_coords.add(other)
+
+        distance = 0
+        while len(new_coords) is not 0:
+            for coord in new_coords:
+                distance_grid[coord] = distance
+
+            if self in distance_grid:
+                direction_to_distance = []
+                for ordinal in [north, south, west, east]:
+                    c = self.moveByCoord(ordinal)
+                    if c in distance_grid:
+                        direction_to_distance.append(
+                            (ordinal, distance_grid[c], c))
+                # direction_to_distance = list(map(lambda ordinal: (ordinal, distance_grid[self.moveByCoord(ordinal)]), [
+                #    north, south, west, east]))
+                direction_to_distance.sort(
+                    key=lambda tuple: (tuple[1], tuple[2]))
+                # key=lambda tuple: tuple[1])
+                return direction_to_distance[0][0]
+
+                # New coord are the union of all one-manhattan step neighbours to previous cords
+                # but remove the ones which are blocked
+                # and remove the ones we've already visited
+            new_coords = set().union(
+                *map(lambda coord: coord.manhattanNeighbours(), new_coords)
+            ).difference(blocks).difference(set(distance_grid.keys()))
+            distance += 1
+
 
 north = Coord(0, -1)
 south = Coord(0, 1)
