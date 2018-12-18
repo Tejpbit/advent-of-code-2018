@@ -5,7 +5,7 @@ import re
 import math
 import asyncio
 
-from util import Coord, north, south, west, east
+from util import Coord, north, south, west, east, bcolors
 
 #f = open("data/13.example.data")
 f = open("data/13.data")
@@ -29,7 +29,7 @@ class Track:
     def next(self, direction: Coord):
         if direction in self.directions:
             return (self.coord.moveByCoord(direction), direction)
-        else: # not in direction. we have to turn
+        else:  # not in direction. we have to turn
             clockWiseDirection = direction.turnClockwise()
             counterClockWiseDireciton = direction.turnCounterClockwise()
             if clockWiseDirection in self.directions:
@@ -45,17 +45,17 @@ def prettyPrint(tracks, carts):
         carts_dict[cart.position] = cart
     track_coords = list(map(lambda x: x.coord, tracks.values()))
     max_x = max(map(lambda coord: coord.x, track_coords))
-    max_y = max(map(lambda coord: coord.y, track_coords ))
+    max_y = max(map(lambda coord: coord.y, track_coords))
 
     out = []
     for y in range(max_y+1):
         out.append([])
         for x in range(max_x+1):
-            c = Coord(x,y)
+            c = Coord(x, y)
             if c in carts_dict:
-                out[-1].append( carts_dict[c].sign() )
+                out[-1].append(carts_dict[c].sign())
             elif c in tracks:
-                out[-1].append( tracks[c].sign )
+                out[-1].append(tracks[c].sign)
             else:
                 out[-1].append(" ")
     o = ["".join(row) for row in out]
@@ -64,24 +64,13 @@ def prettyPrint(tracks, carts):
     print("\n".join(o))
 
 
-
-
 crossing_turn_rotation = [
     lambda x: x.turnCounterClockwise(),
     lambda x: x,
     lambda x: x.turnClockwise()
 ]
 
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    
+
 @dataclass
 class Cart:
     id: str
@@ -112,14 +101,13 @@ class Cart:
 
 
 def getDirectionsFromSign(sign):
-    if sign == '+':    
+    if sign == '+':
         return [north, south, west, east]
     elif sign in ['-', '<', '>']:
         return [west, east]
     elif sign in ['|', 'v', '^']:
         return [north, south]
     return []
-
 
 
 def neighbourInDirectionIsVerticalTrack(track, direction, trackParts):
@@ -132,7 +120,9 @@ def neighbourInDirectionIsVerticalTrack(track, direction, trackParts):
     return False
 
 
-nameGenerator = (chr(n) for n in range(65,126))
+nameGenerator = (chr(n) for n in range(65, 126))
+
+
 def initTrackAndCarts():
     tracks = dict()
     carts = []
@@ -143,10 +133,10 @@ def initTrackAndCarts():
                 continue
             if cell in ['v', '^', '<', '>']:
                 a = {'v': south, '^': north, '<': west, '>': east}
-                c = Cart(next(nameGenerator), Coord(x,y), a[cell])
+                c = Cart(next(nameGenerator), Coord(x, y), a[cell])
                 print(c)
                 carts.append(c)
-            location = Coord(x,y)
+            location = Coord(x, y)
             directions = getDirectionsFromSign(cell)
             cellSign = cell
             if cell in ['v', '^']:
@@ -183,17 +173,28 @@ def firstCollision():
                 return
             positions_moved_to_this_turn.add(cart.position)
 
-#firstCollision()
+# firstCollision()
+
+
+def cartCrashedInto(cart, carts):
+    carts = carts.copy()
+    carts.remove(cart)
+    for c in carts:
+        if cart.position == c.position:
+            return c
+    return None
+
 
 def lastCartPositionAfterFirstLonesomeTic():
     (tracks, carts) = initTrackAndCarts()
     prettyPrint(tracks, carts)
     count = 0
+
     while True:
-        if count > 773:
-            print(count)
-            prettyPrint(tracks, carts)
-            input("Enter to print next")
+        # if count > 773:
+        #     print(count)
+        #     prettyPrint(tracks, carts)
+        #     input("Enter to print next")
         #input("Enter to print next")
         #prettyPrint(tracks, carts)
         if len(carts) == 1:
@@ -201,26 +202,25 @@ def lastCartPositionAfterFirstLonesomeTic():
             print("count", count)
             return c
         carts.sort(key=lambda x: x.position)
-        positions_moved_to_this_turn = dict()
-        coordsToRemoveCartsFrom = set()
-        for cart in carts:
+        cartIndex = 0
+        while cartIndex < len(carts):
+            # for cart in carts:
+            cart = carts[cartIndex]
             cart.move(tracks)
-            if cart.position in positions_moved_to_this_turn:
-                #input("Enter to print next")
-                print("\n\n\n\n")
-                print(f"tick: {count}, Crash at ({cart.position.x},{cart.position.y}) {cart.str()}, {positions_moved_to_this_turn[cart.position].str()}")
-                #prettyPrint(tracks, carts)
-                print("carts after crash", sorted(carts,key=lambda x: x.position))
-                coordsToRemoveCartsFrom.add(cart.position)
-                del positions_moved_to_this_turn[cart.position]
-            else:
-                positions_moved_to_this_turn[cart.position] = cart
-        carts = list(filter(lambda x: x.position not in coordsToRemoveCartsFrom, carts))
+            other = cartCrashedInto(cart, carts)
+            if other:
+                print(
+                    f"Crash tick({count}, ({cart.position.x},{cart.position.y})), {cart.id} {other.id}")
+                other_index = carts.index(other)
+                carts.remove(cart)
+                carts.remove(other)
+                if other_index < cartIndex:
+                    cartIndex -= 1
+                cartIndex -= 1
+            cartIndex += 1
         count += 1
+
+
 c = lastCartPositionAfterFirstLonesomeTic()
 print(f"Final cart: {c.str()}, {c.position}")
-#print(carts)
-
-             
-        
-        
+# print(carts)
