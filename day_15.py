@@ -4,7 +4,7 @@ import functools
 import collections
 import math
 
-from util import Coord
+from util import Coord, red, bold
 
 from enum import Enum
 
@@ -72,11 +72,20 @@ class Game:
     board: Dict[Coord, any]
     units: List[Unit]
     round_count: int
+    attacks_this_round: List[Unit]
+    moves_this_round: List[Unit]
 
     def __init__(self, board, units):
         self.board = board
         self.units = sorted(units, key=lambda unit: unit.position)
         self.round_count = 0
+        self.attacks_this_round = []
+        self.moves_this_round = []
+
+    def setElvesAttackPower(self, attack_power: int):
+        for u in self.units:
+            if u.allegiance == Allegiace.ELF:
+                u.attack_power = attack_power
 
     def targets(self, unit: Unit):
         units_of_opposite_faction = list(
@@ -126,17 +135,19 @@ class Game:
             positionsHistory = positionsHistory.union(newPositions)
         return None
 
-
     def hasEnemyInRange(self, unit):
         targets = self.targets(unit)
         return not unit.position.manhattanNeighbours().isdisjoint(map(lambda t: t.position, targets))
 
     def enemiesInRange(self, unit):
         targets = self.targets(unit)
-        es = filter(lambda t: t.position in unit.position.manhattanNeighbours(), targets)
+        es = filter(
+            lambda t: t.position in unit.position.manhattanNeighbours(), targets)
         return list(es)
 
     def round(self):
+        self.attacks_this_round = []
+        self.moves_this_round = []
         # for each unit
         # identify targets (enemy units) self.targets(unit)
         # identify open squares (open adjacent squares to enemy units)
@@ -147,7 +158,10 @@ class Game:
         # self.units.sort(key=lambda unit: unit.position)
         # units_by_reading_order = sorted(
         #    self.units.values(), key=lambda unit: unit.position)
-        for unit in self.units:
+        unit_index = 0
+        while unit_index < len(self.units):
+            unit = self.units[unit_index]
+            # for unit in self.units:
 
             if not self.hasEnemyInRange(unit):
                 targets = self.targets(unit)
@@ -167,22 +181,29 @@ class Game:
                     direction = unit.position.shortest_path_direction(
                         closest_open_square, temp_board)
                     unit.move(direction)
+                    self.moves_this_round.append(unit)
                     self.units
-                print(self.pretty_str())
-            
-            #Has moved or has not moved, w/e time to see if we can attack
+                # print(self.pretty_str())
+
+            # Has moved or has not moved, w/e time to see if we can attack
 
             if self.hasEnemyInRange(unit):
                 # the adjacent target with the fewest hit points is selected;
                 # in a tie, the adjacent target with the fewest
                 # hit points which is first in reading order is selected.
-                print("He attack")
                 enemies = self.enemiesInRange(unit)
                 enemies.sort(key=lambda unit: (unit.hit_points, unit.position))
-                fuckDisGuy = enemies[0]
-                fuckDisGuy.hit_points -= unit.attack_power
-                if fuckDisGuy.hit_points <= 0:
-                    self.units.remove(unit)
+                victim = enemies[0]
+                victim.hit_points -= unit.attack_power
+                if victim.hit_points <= 0:
+                    victim_index = self.units.index(victim)
+                    self.units.remove(victim)
+                    if victim_index < unit_index:
+                        unit_index -= 1
+
+                # For pretty_str
+                self.attacks_this_round.append(unit)
+            unit_index += 1
 
         self.units.sort(key=lambda u: u.position)
         self.round_count += 1
@@ -195,17 +216,14 @@ class Game:
             if unit.position.y not in buckets:
                 buckets[unit.position.y] = []
             buckets[unit.position.y].append(unit)
-        
+
         pretty_list = []
         for bucket_key in sorted(buckets.keys()):
             b = buckets[bucket_key]
             for node in b:
-                pretty_list.append(f"{node.allegiance}({node.hit_points})")
+                pretty_list.append(f"{node.allegiance}({node.hit_points})\t")
             pretty_list.append("\n")
         return "".join(pretty_list)
-        
-
-            
 
     def pretty_str(self):
         max_x = max(map(lambda coord: coord.x, self.board.keys()))
@@ -219,32 +237,84 @@ class Game:
 
                 current_coord = Coord(x, y)
                 if current_coord in coord_to_unit:
-                    pretty_list.append(
-                        coord_to_unit[current_coord].allegiance.value)
+                    u = coord_to_unit[current_coord]
+                    #print("Hello", u, self.attacks_this_round)
+                    unit_str = coord_to_unit[current_coord].allegiance.value
+                    if u in self.moves_this_round:
+                        unit_str = bold(unit_str)
+                    if u in self.attacks_this_round:
+                        unit_str = red(unit_str)
+                    pretty_list.append(unit_str)
                 elif current_coord in self.board:
-                    pretty_list.append(self.board[current_coord].__repr__())
+                    pretty_list.append(
+                        self.board[current_coord].__repr__())
                 else:
                     pretty_list.append('.')
             pretty_list.append('\n')
         return "".join(pretty_list)
 
+    def number_of_living_elves(self):
+        return len(list(filter(lambda u: u.allegiance is Allegiace.ELF, self.units)))
 
-def part1():
+
+def part1(filename):
     #f = open("day_15.movement.example.data")
-    f = open("day_15.example.data")
+    f = open(filename)
     game = parse(f)
+    f.close()
     print(game.pretty_str())
-    #number of full rounds that were completed
-    # the sum of the hit points of all remaining units 
+    # number of full rounds that were completed
+    # the sum of the hit points of all remaining units
     completed = True
-    
+
     while completed:
         completed = game.round()
-        print(game.pretty_healthstats())
+        # print(game.pretty_healthstats())
         print(game.pretty_str())
-    
-    print("Rounds", game.round_count)
+    # print(game.pretty_str())
+
+    #print("Rounds", rounds)
+    #print("Sum of hit_points", hit_point_sum)
+    #print("Res: ", res)
+    return game
+
+
+def part2(filename):
+    f = open(filename)
+    game = parse(f)
+    f.close()
+    print(game.pretty_str())
+    # the sum of the hit points of all remaining units
+
+    lowest_attack_power = 3
+    highest_attack_power = 25
+    game.setElvesAttackPower(highest_attack_power)
+    number_of_elves_at_start = game.number_of_living_elves()
+
+    completed = True
+    while completed:
+        completed = game.round()
+        # print(game.pretty_healthstats())
+        print(game.pretty_str())
+    # print(game.pretty_str())
+    number_of_elves_at_end = game.number_of_living_elves()
+    success = number_of_elves_at_start is number_of_elves_at_end
+    print("Did all elves survive?", success)
+    #print("Rounds", rounds)
+    #print("Sum of hit_points", hit_point_sum)
+    #print("Res: ", res)
+    return game
 
 
 if __name__ == "__main__":
-    part1()
+    game = part1("day_15.data")
+    rounds = game.round_count
+    hit_point_sum = sum(map(lambda u: u.hit_points, game.units))
+    res = rounds * hit_point_sum
+    print("Part1 res:", rounds, hit_point_sum, rounds * hit_point_sum)
+
+    game = part2("day_15.data")
+    rounds = game.round_count
+    hit_point_sum = sum(map(lambda u: u.hit_points, game.units))
+    res = rounds * hit_point_sum
+    print("Part2 res:", rounds, hit_point_sum, rounds * hit_point_sum)
