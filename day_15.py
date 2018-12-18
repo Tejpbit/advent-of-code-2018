@@ -71,10 +71,12 @@ def parse(file):
 class Game:
     board: Dict[Coord, any]
     units: List[Unit]
+    round_count: int
 
     def __init__(self, board, units):
         self.board = board
         self.units = sorted(units, key=lambda unit: unit.position)
+        self.round_count = 0
 
     def targets(self, unit: Unit):
         units_of_opposite_faction = list(
@@ -124,6 +126,16 @@ class Game:
             positionsHistory = positionsHistory.union(newPositions)
         return None
 
+
+    def hasEnemyInRange(self, unit):
+        targets = self.targets(unit)
+        return not unit.position.manhattanNeighbours().isdisjoint(map(lambda t: t.position, targets))
+
+    def enemiesInRange(self, unit):
+        targets = self.targets(unit)
+        es = filter(lambda t: t.position in unit.position.manhattanNeighbours(), targets)
+        return list(es)
+
     def round(self):
         # for each unit
         # identify targets (enemy units) self.targets(unit)
@@ -136,26 +148,64 @@ class Game:
         # units_by_reading_order = sorted(
         #    self.units.values(), key=lambda unit: unit.position)
         for unit in self.units:
-            targets = self.targets(unit)
-            open_squares = set().union(*map(lambda target: self.open_squares(target), targets))
 
-            closest_open_square = self.closest(unit, open_squares)
-            if unit.position is closest_open_square or closest_open_square == None:
-                pass
-                # skip to attack
-            else:
-                other_units = self.units.copy()
-                other_units.remove(unit)
-                temp_board = self.board.copy()
-                for u in other_units:
-                    temp_board[u.position] = WALL
+            if not self.hasEnemyInRange(unit):
+                targets = self.targets(unit)
+                if len(targets) == 0:
+                    return False
+                open_squares = set().union(*map(lambda target: self.open_squares(target), targets))
 
-                direction = unit.position.shortest_path_direction(
-                    closest_open_square, temp_board)
-                unit.move(direction)
-                self.units
-            print(self.pretty_str())
+                closest_open_square = self.closest(unit, open_squares)
+                # Unit is not standing on a closest square, but there exist an open_square
+                if unit.position is not closest_open_square and closest_open_square is not None:
+                    other_units = self.units.copy()
+                    other_units.remove(unit)
+                    temp_board = self.board.copy()
+                    for u in other_units:
+                        temp_board[u.position] = WALL
+
+                    direction = unit.position.shortest_path_direction(
+                        closest_open_square, temp_board)
+                    unit.move(direction)
+                    self.units
+                print(self.pretty_str())
+            
+            #Has moved or has not moved, w/e time to see if we can attack
+
+            if self.hasEnemyInRange(unit):
+                # the adjacent target with the fewest hit points is selected;
+                # in a tie, the adjacent target with the fewest
+                # hit points which is first in reading order is selected.
+                print("He attack")
+                enemies = self.enemiesInRange(unit)
+                enemies.sort(key=lambda unit: (unit.hit_points, unit.position))
+                fuckDisGuy = enemies[0]
+                fuckDisGuy.hit_points -= unit.attack_power
+                if fuckDisGuy.hit_points <= 0:
+                    self.units.remove(unit)
+
         self.units.sort(key=lambda u: u.position)
+        self.round_count += 1
+        return True
+
+    def pretty_healthstats(self):
+        self.units.sort(key=lambda u: u.position)
+        buckets: Dict[int, List[Unit]] = dict()
+        for unit in self.units:
+            if unit.position.y not in buckets:
+                buckets[unit.position.y] = []
+            buckets[unit.position.y].append(unit)
+        
+        pretty_list = []
+        for bucket_key in sorted(buckets.keys()):
+            b = buckets[bucket_key]
+            for node in b:
+                pretty_list.append(f"{node.allegiance}({node.hit_points})")
+            pretty_list.append("\n")
+        return "".join(pretty_list)
+        
+
+            
 
     def pretty_str(self):
         max_x = max(map(lambda coord: coord.x, self.board.keys()))
@@ -180,12 +230,20 @@ class Game:
 
 
 def part1():
-    f = open("day_15.movement.example.data")
+    #f = open("day_15.movement.example.data")
+    f = open("day_15.example.data")
     game = parse(f)
     print(game.pretty_str())
-    while True:
-        game.round()
-    pass
+    #number of full rounds that were completed
+    # the sum of the hit points of all remaining units 
+    completed = True
+    
+    while completed:
+        completed = game.round()
+        print(game.pretty_healthstats())
+        print(game.pretty_str())
+    
+    print("Rounds", game.round_count)
 
 
 if __name__ == "__main__":
