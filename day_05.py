@@ -1,5 +1,6 @@
 
-from concurrent.futures import ThreadPoolExecutor
+
+import asyncio
 from functools import reduce
 f = open("data/05.data")
 
@@ -23,47 +24,35 @@ def asd(acc, future):
 
 
 def reduceMax(polymerstring):
-    (last, q) = reduce(asd, polymerstring, ('', ""))
-    q = q + last
-    prevQ = polymerstring
-    while len(prevQ) != len(q):
-        print(chr(27) + "[2J")
-        print(q)
-        prevQ = q
-        (last, q) = reduce(asd, q, ('', ""))
-        q = q+last
-    return q
-
-from time import sleep
-def reduceMax2(polymerstring):
     polymerlist = list(polymerstring)
     cursor = 0
     while cursor < len(polymerlist)-1:
         if is_match(polymerlist[cursor],polymerlist[cursor+1]):
-            del1 = polymerlist.pop(cursor+1)
-            del2 = polymerlist.pop(cursor)
+            del polymerlist[cursor+1]
+            del polymerlist[cursor]
             cursor -= 1 if cursor > 0 else 0
         else:
             cursor += 1
     return polymerlist
 
-reducedPolymer = reduceMax2(polymerstring)
+reducedPolymer = reduceMax(polymerstring)
 print(len(reducedPolymer))
 
-def parallelReduceMax2(name, polymer, return_dict):
-    return_dict[name] = reduceMax2(polymer)
+async def reduceMaxRoutine(name, polymerstr):
+    return (name, reduceMax)
 
-threads = []
-results = []
+routines = []
 
 from multiprocessing import Process, Manager
 shortest = ("", __import__('math').inf)
 for c in "abcdefghijklmnopqrstuvwxyz":
     a = [x for x in reducedPolymer if x != c and x != c.capitalize()]
     
-    polymer = reduceMax2(a)
-    if(len(polymer) < shortest[1]):
-        shortest = (f'Removed {c}', len(polymer))
+    routine = reduceMaxRoutine(f'Removed {c}', a)
+    routines += [routine]
+
+asyncio.gather(routines...)
+
 
     
 

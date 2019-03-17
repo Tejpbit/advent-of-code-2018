@@ -175,4 +175,4 @@ def part2():
 
 
 
-part2()
+part1()

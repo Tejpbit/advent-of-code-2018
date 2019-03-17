@@ -129,6 +129,7 @@ def parseSamples(lineGen):
 
         samples.append(Sample(before, instruction, after))
 
+
 def possibleOpcodesForSample(sample: Sample):
     beforeTm = sample.beforeTm()
     afterTm = sample.afterTm()
@@ -165,8 +166,9 @@ def part1(filename):
             matches_3_opcodes += 1
     return f"matches_3_opcodes: {matches_3_opcodes}, samples {len(samples)}"
 
+
 def execute_program(number_to_opcode, lineGen):
-    machine = [0,0,0,0]
+    machine = [0, 0, 0, 0]
     for line in lineGen:
         parts = list(map(int, line.split(" ")))
         opcode = number_to_opcode[parts[0]]
@@ -183,7 +185,7 @@ class Statement:
         if self.op_number != other.op_number:
             raise Exception("Can only merge same op_numbers")
         return Statement(self.op_number, self.op_codes.intersection(other.op_codes))
-    
+
     def reduce_by_assumption(self, assumptions: Dict[int, str]):
         for a in assumptions:
             if a == self.op_number:
@@ -197,13 +199,14 @@ class Statement:
     def __deepcopy__(self, memo):
         return Statement(self.op_number, self.op_codes.copy())
 
-    #def reduce_by_statements(self, statements: Dict[int, Statement]):
-    
+    # def reduce_by_statements(self, statements: Dict[int, Statement]):
+
     def pretty_str(self):
         return f"{self.op_number}: {self.op_codes}"
 
     def isDetermined(self):
         return len(self.op_codes) == 1
+
 
 def part2_solver(statements: Dict[str, Statement], assumptions: Dict[int, str] = dict()):
     ress = []
@@ -218,13 +221,15 @@ def part2_solver(statements: Dict[str, Statement], assumptions: Dict[int, str] =
         return None
     if all(map(lambda op_num: len(statements[op_num].op_codes) == 1, statements)):
         return statements
-    else: # not solved, walk through all possible assumptions from all undetermined statements
-        undeterminedStatements = (s for s in statements.values() if not s.isDetermined())
-        
+    else:  # not solved, walk through all possible assumptions from all undetermined statements
+        undeterminedStatements = (
+            s for s in statements.values() if not s.isDetermined())
+
         for unresolvedStatement in undeterminedStatements:
             for op_code in unresolvedStatement.op_codes:
                 s = copy.deepcopy(statements)
-                s[unresolvedStatement.op_number] = Statement(unresolvedStatement.op_number, {op_code})
+                s[unresolvedStatement.op_number] = Statement(
+                    unresolvedStatement.op_number, {op_code})
                 a = copy.deepcopy(assumptions)
                 a[unresolvedStatement.op_number] = op_code
                 res = part2_solver(s, a)
@@ -234,9 +239,7 @@ def part2_solver(statements: Dict[str, Statement], assumptions: Dict[int, str] =
         return ress
     else:
         return None
-                
-            
-        
+
 
 def part2(filename):
     f = open(filename)
@@ -257,21 +260,21 @@ def part2(filename):
 
             if beforeTmCopy == afterTm:
                 statement.op_codes.add(opcode)
-    
+
         if statement.op_number not in statement_merger:
             statement_merger[statement.op_number] = statement
         else:
-            statement_merger[statement.op_number] = statement_merger[statement.op_number].merge(statement)
+            statement_merger[statement.op_number] = statement_merger[statement.op_number].merge(
+                statement)
 
     s = part2_solver(statement_merger)
 
     print("part2:", s)
-            
 
     #execute_program(determined_number_to_opcode, lineGen)
 
-
     return None
+
 
 if __name__ == "__main__":
     print(part1("day_16.data"))
